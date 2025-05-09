@@ -38,11 +38,11 @@ function draw() {
         for (let i = 0; i < hand.keypoints.length; i++) {
           let keypoint = hand.keypoints[i];
 
-          // Color-code based on left or right hand
+           // Color-code based on left or right hand
           if (hand.handedness == "Left") {
-            fill(255, 0, 255);
+            fill("#582f0e");
           } else {
-            fill(255, 255, 0);
+            fill("#ffcad4");
           }
 
           noStroke();
