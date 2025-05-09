@@ -6,6 +6,10 @@ let handPose;
 let hands = [];
 let circleX, circleY; // 圓的初始位置
 let circleRadius = 50; // 圓的半徑
+let isDraggingByIndex = false; // 是否由食指拖動
+let isDraggingByThumb = false; // 是否由大拇指拖動
+let indexTrail = []; // 食指的軌跡
+let thumbTrail = []; // 大拇指的軌跡
 
 function preload() {
   // Initialize HandPose model with flipped video input
@@ -36,6 +40,26 @@ function setup() {
 function draw() {
   image(video, 0, 0);
 
+  // 繪製食指的紅色軌跡
+  stroke(255, 0, 0);
+  strokeWeight(2);
+  noFill();
+  beginShape();
+  for (let point of indexTrail) {
+    vertex(point.x, point.y);
+  }
+  endShape();
+
+  // 繪製大拇指的綠色軌跡
+  stroke(0, 255, 0);
+  strokeWeight(2);
+  noFill();
+  beginShape();
+  for (let point of thumbTrail) {
+    vertex(point.x, point.y);
+  }
+  endShape();
+
   // 繪製圓
   fill(255, 0, 0, 150); // 半透明紅色
   noStroke();
@@ -60,65 +84,40 @@ function draw() {
           circle(keypoint.x, keypoint.y, 16);
         }
 
-        // 繪製手指的線條
-        stroke(0, 255, 0);
-        strokeWeight(2);
-
-        // 串接手指的線條
-        for (let i = 0; i < 4; i++) {
-          line(
-            hand.keypoints[i].x,
-            hand.keypoints[i].y,
-            hand.keypoints[i + 1].x,
-            hand.keypoints[i + 1].y
-          );
-        }
-        for (let i = 5; i < 8; i++) {
-          line(
-            hand.keypoints[i].x,
-            hand.keypoints[i].y,
-            hand.keypoints[i + 1].x,
-            hand.keypoints[i + 1].y
-          );
-        }
-        for (let i = 9; i < 12; i++) {
-          line(
-            hand.keypoints[i].x,
-            hand.keypoints[i].y,
-            hand.keypoints[i + 1].x,
-            hand.keypoints[i + 1].y
-          );
-        }
-        for (let i = 13; i < 16; i++) {
-          line(
-            hand.keypoints[i].x,
-            hand.keypoints[i].y,
-            hand.keypoints[i + 1].x,
-            hand.keypoints[i + 1].y
-          );
-        }
-        for (let i = 17; i < 20; i++) {
-          line(
-            hand.keypoints[i].x,
-            hand.keypoints[i].y,
-            hand.keypoints[i + 1].x,
-            hand.keypoints[i + 1].y
-          );
-        }
-
-        // 檢查食指與大拇指是否同時碰觸圓
+        // 檢查食指是否碰觸圓
         let indexFinger = hand.keypoints[8]; // 食指的點
-        let thumb = hand.keypoints[4]; // 大拇指的點
-
         let dIndex = dist(indexFinger.x, indexFinger.y, circleX, circleY);
+
+        if (dIndex < circleRadius) {
+          isDraggingByIndex = true;
+          isDraggingByThumb = false; // 停止大拇指拖動
+          circleX = indexFinger.x;
+          circleY = indexFinger.y;
+          indexTrail.push({ x: circleX, y: circleY }); // 記錄軌跡
+        } else {
+          isDraggingByIndex = false;
+        }
+
+        // 檢查大拇指是否碰觸圓
+        let thumb = hand.keypoints[4]; // 大拇指的點
         let dThumb = dist(thumb.x, thumb.y, circleX, circleY);
 
-        if (dIndex < circleRadius && dThumb < circleRadius) {
-          // 如果食指與大拇指同時碰觸圓，讓圓跟隨兩指的中點移動
-          circleX = (indexFinger.x + thumb.x) / 2;
-          circleY = (indexFinger.y + thumb.y) / 2;
+        if (dThumb < circleRadius) {
+          isDraggingByThumb = true;
+          isDraggingByIndex = false; // 停止食指拖動
+          circleX = thumb.x;
+          circleY = thumb.y;
+          thumbTrail.push({ x: circleX, y: circleY }); // 記錄軌跡
+        } else {
+          isDraggingByThumb = false;
         }
       }
     }
+  }
+
+  // 如果手指離開圓，停止記錄軌跡
+  if (!isDraggingByIndex && !isDraggingByThumb) {
+    indexTrail = [];
+    thumbTrail = [];
   }
 }
